@@ -2,14 +2,43 @@
 <html>
 <head>
     <title>EcoPi Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+
     <h1>🌱 EcoPi Ituiutaba</h1>
+
     <h2>Temperatura: <span id="temp">--</span> °C</h2>
     <h2>Umidade: <span id="hum">--</span> %</h2>
     <h3>Atualizado: <span id="time">--</span></h3>
 
+    <canvas id="grafico" width="600" height="300"></canvas>
+
     <script>
+        const ctx = document.getElementById('grafico').getContext('2d');
+
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Temperatura (°C)',
+                        data: [],
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Umidade (%)',
+                        data: [],
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: false
+            }
+        });
+
         async function atualizar() {
             const res = await fetch("http://127.0.0.1:5000/data");
             const data = await res.json();
@@ -17,9 +46,24 @@
             document.getElementById("temp").innerText = data.temperatura;
             document.getElementById("hum").innerText = data.umidade;
             document.getElementById("time").innerText = data.timestamp;
+
+            // adiciona dados no gráfico
+            chart.data.labels.push(data.timestamp);
+            chart.data.datasets[0].data.push(data.temperatura);
+            chart.data.datasets[1].data.push(data.umidade);
+
+            // limitar tamanho (últimos 10 pontos)
+            if (chart.data.labels.length > 10) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+                chart.data.datasets[1].data.shift();
+            }
+
+            chart.update();
         }
 
         setInterval(atualizar, 2000);
     </script>
+
 </body>
 </html>
